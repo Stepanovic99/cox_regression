@@ -1,0 +1,260 @@
+---
+title: "Cox Regression"
+author: "Stephan Voegele"
+bibliography: references.bib
+date: last-modified
+format: 
+  html:
+    self-contained: true
+    number-sections: true
+    number-depth: 3
+    anchor-sections: true
+    smooth-scroll: true
+    theme: journal
+    toc: true
+    toc-depth: 3
+    toc-title: Contents
+    toc-location: right
+    code-link: false
+    code-tools: true
+    code-fold: show
+    code-block-bg: "#f1f3f5"
+    code-block-border-left: "#31BAE9"
+    reference-location: margin
+    fig-cap-location: margin
+    keep-md: true
+execute:
+  warning: false
+  message: false
+---
+
+# Objectives
+
+-   Provide theoretical background
+-   Apply Cox regression to dataset
+-   Check assumptions
+
+Dataset: Prostate cancer dataset from @harrell2015regression
+
+-   Response: Survival time
+-   Predictors: several
+
+```{r, message=FALSE,warning=FALSE, echo=FALSE}
+library(Hmisc)
+library(dplyr)
+#getHdata(prostate)
+load(file='prostate.rda')
+require(rms)
+library(survival)
+
+```
+
+# Theoretical background
+
+## Survival Function
+
+
+## Hazard Function
+
+Relative risks or are not applicable for survival times, because we usually cannot assume that the risk is constant over time. We need to create a different measure of risk which takes the time into account, the `hazard ratio`. The central concept is the hazard function.
+
+The idea behind the hazard function is to divide the time in consecutive intervals
+
+$$
+[0, t^{(1)}], [t^{(2)}, t^{(3)}], [t^{(q-1)}, t^{(q)}] 
+$$
+The relative risk in the q-th interval is then defined as the quotient of the conditional probability that a patient is still alive at the beginning of the interval, for therapy A and B. 
+
+From this idea follows the hazard function:
+$$
+\lambda(t)=\lim_{h \to 0}\frac{P(t<T<t+h|T>t)}{h}
+$$
+
+::: callout-note
+Therefore, the hazard function can be defined as the instantaneous probability of having an event at time t, given that one has survived up to time t. 
+:::
+
+The hazard ratio is the quotient of the hazard function under therapy A and the hazard function of therapy B.
+$$
+HR=\frac{\lambda_a(t)}{\lambda_B(t)}
+$$
+It is assumed that this ratio is constant over time, i.e. proportional. 
+
+## Estimation of the survival function and the hazard function
+The survival function $S(t)$ and the hazard function $\lambda(t)$ are usually unknown. The survival function can be estimated by the Kaplan-Meier estimates $S_{KM}(t)$. 
+$$
+S_{KM}(t)=\prod_{i:t_i \leq t}(1-\frac{d_i}{n_i})
+$$
+The Kaplan-Meier estimator of $\lambda(t)$ is $\lambda_{KM}(t)=-log S_{KM}(t)$.
+
+::: column-margin
+Therefore, survival function and hazard function are related.
+:::
+
+## Cox Proportional Hazards Model
+The general notation of the model is
+$$
+\lambda(t|X)=\lambda(t) exp(X\beta)
+$$
+By dividing both sides with $\lambda(t)$ and taking the logs, it follows
+$$
+log[\frac{\lambda(t|X)}{\lambda(t)}]=X\beta
+$$
+
+::: column-margin
+$\lambda(t)$ is the baseline hazard at time t, representing the hazard for a person with the value 0 for all the predictor variables. 
+:::
+
+The primary interest is the estimation of $\beta$. The $\beta$s are the regression coefficients and represent the influence of each respective covariate on the survival time. See chapter 20.1.3 in @harrell2015regression for details of the derivation of $\beta$.
+
+::: callout-note
+Cox proportional hazard model is a semi-parametric model, as it makes a parametric assumption regarding the effect of the predictors on the hazard function $\lambda(t)$, but makes no assumption on the hazard function (e.g. constant like in the exponential model, Weibull).
+:::
+
+`Example` (from @schumacher2008methodik ):
+Consider a Cox PH model with two categorical covariates $X_1$ and $X_2$ (coded as 0 and 1). The model is therefore
+$$
+\lambda(t|X_1,X_2)=\lambda(t) exp(\beta_1X_1 + \beta_2X_2)
+$$
+The HR for $X_1$ (therapy B vs. therapy A) is therefore
+$$
+HR(B:A)=\frac{\lambda(t|X_1=1,X_2)}{\lambda(t|X_1=0,X_2)}=exp(\beta_1)
+$$
+  
+::: column-margin
+The $\beta$s are therefore equal to the logarithms of the hazard ratios. 
+:::
+
+Interpretations from @rosner2006fundamentals
+
+`Interpretation of HR for categorical predictors:`
+The quantity $exp(beta_1)$ can be interpreted as the instantaneous relative risk of an event per unit time for a person with the risk factor present compared with a person with the risk factor absent, given that both individuals have survived to time t and are the same on all other covariates.
+
+`Interpretation of HR for continuous predictors:`
+The quantity $exp(beta_1)$ can be interpreted as the instantaneous relative risk of an event per unit time for an individual with risk-factor level $x_j + \Delta$ compared with someone with risk-level factor $x_j$, given that both individuals have survived to time t and are the same on all other covariates.
+
+## Stratification
+see @harrell2015regression chapter 20.1.7
+
+## Test Statistics
+Usually, the Wald-Test is used to test whether a regression coefficient is significantly different from 0. The corresponding test statistic is
+$$
+z=\frac{\beta_j}{SE(\beta_j)}
+$$
+
+::: column-margin
+For a 2-sided  significance test:
+
+if $z<z_{\alpha/2}$ or $z > z_{1-\alpha/2}$ then reject $H_0$
+
+if $z_{\alpha/2} \le z \le z_{1-\alpha/2}$ then do not reject $H_0$
+:::
+
+This test statistic is standard normally distributed under the hypothesis that $\beta_j=0$, with the 100(1-$\alpha$)% confidence interval 
+$$
+[\beta_j \pm u_{1-\frac{\alpha}{2}} * SE (\beta_j) ]
+$$
+The corresponding confidence interval of the hazard ratio can be calculated by applying exponentials to the limits. 
+
+## Model Assumptions
+- linearity and additivity (see chapter 20.6.1 in @harrell2015regression)
+- proportional hazards (various methods exist)
+
+
+# Descriptive Statistics
+
+```{r desc}
+describe(prostate)
+```
+
+# Prepare the data
+
+In a first part, levels from certain variables are combined, e.g. if there are only few observations in one category. Additionally, the transcan function from the rms package is used to impute missing data.
+
+Continuous predictors are expanded by fitting four-knot restricted cubic spline functions, which contain two nonlinear terms and thus have a total of three d.f. Therefore, the rcs function from the rms package is used.
+
+What are `restricted cubic splines`?
+
+
+```{r}
+levels(prostate$ekg)[levels(prostate$ekg) %in% c('old MI', 'recent MI')] <- 'MI'
+# combines last 2 levels and uses a new name , MI
+
+prostate$pf.coded <- as.integer(prostate$pf)
+# save original pf , re-code to 1-4
+
+levels(prostate$pf) <- c(levels(prostate$pf)[1:3], levels(prostate$pf)[3])
+# combine last 2 levels
+
+w <- transcan(~ sz + sg + ap + sbp + dbp + age + wt + hg + ekg + pf + bm + hx, imputed=TRUE, data =prostate, pl=FALSE, pr=FALSE )
+
+attach(prostate)
+sz <- impute(w, sz, data=prostate)
+sg <- impute(w, sg, data=prostate)
+age <- impute(w, age, data=prostate)
+wt <- impute(w, wt, data=prostate)
+ekg <- impute(w, ekg, data=prostate)
+
+dd <- datadist(prostate); options(datadist = 'dd')
+```
+
+# Fit the model
+
+```{r}
+units(dtime) <- 'Month'
+S <- Surv(dtime, status != 'alive')
+
+f <- cph(S ~ rx + rcs(age, 4) + rcs(wt, 4) + pf + hx + rcs(sbp, 4) + rcs(dbp, 4) + ekg + rcs(hg, 4) + rcs(sg, 4) + rcs(sz, 4) + rcs(log(ap), 4) + bm)
+
+print(f, latex=T, coefs=F)
+```
+
+The likelihood ratio $\chi^2$ is 136.22 with 36 df (p\<0.05).
+
+::: column-margin
+The LR $\chi^2$ is calculated by comparing the deviance (- 2 \* log likelihood) of the model, with all of the covariates you have specified, against the model with all covariates dropped.
+:::
+
+The AIC value is not provided in the output, but can calculated from LF $\chi^2$ as follows: $$
+AIC = 2k - 2ln(\hat L)
+$$ with k as the number of estimated parameters and $\hat L$ as the maximum value of the likelihood function for the model. $ln\hat L$ is the log likelihood.
+
+AIC = 136.22 - 2\*36 = 64.2
+
+In the following an informal data reduction is applied:
+```{r}
+heart <- hx + ekg %nin% c('normal','benign')
+label(heart) <- 'Heart Disease Code'
+map   <- (2*dbp + sbp)/3
+label(map) <- 'Mean Arterial Pressure/10'
+dd <- datadist(dd, heart, map)
+
+f <- cph(S ~ rx + rcs(age,4) + rcs(wt,3) + pf.coded +
+         heart + rcs(map,3) + rcs(hg,4) +
+         rcs(sg,3) + rcs(sz,3) + rcs(log(ap),5) + bm,
+         x=TRUE, y=TRUE, surv=TRUE, time.inc=5*12)
+print(f, coefs=T)
+```
+* Improved AIC of 70
+* Rough shrinkage estimate improved to 0.80 (but still worrisome)
+
+# Checking assumptions
+`Smoothed scales Schoenfeld residuals` are used.
+
+```{r, message=FALSE}
+# compute scale Schoenfeld residuals separately for each predictor and 
+# test the assumption of PH
+phtest <- cox.zph(f, transform='identity')
+phtest
+```
+To graphically examine the PH assumption use:
+```{r}
+plot(phtest, var='rx')
+```
+
+
+ 
+# References {.unnumbered}
+
+::: {#refs}
+:::
