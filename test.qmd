@@ -1,0 +1,66 @@
+---
+title: "Untitled"
+author: "Stephan Voegele"
+date: last-modified
+format: 
+  gfm:
+    toc: TRUE
+    number-sections: true
+    html-math-method: webtex
+bibliography: references.bib
+execute:
+  warning: false
+  message: false
+---
+
+# Objectives
+
+-   Provide theoretical background
+-   Apply Cox regression to dataset
+-   Check assumptions
+
+Dataset: Prostate cancer dataset from @harrell2015regression
+
+-   Response: Survival time
+-   Predictors: several
+
+```{r, message=FALSE,warning=FALSE, echo=FALSE}
+library(Hmisc)
+library(dplyr)
+#getHdata(prostate)
+load(file='prostate.rda')
+require(rms)
+library(survival)
+
+```
+
+# Theoretical background
+
+## Survival Function
+
+
+## Hazard Function
+
+Relative risks or are not applicable for survival times, because we usually cannot assume that the risk is constant over time. We need to create a different measure of risk which takes the time into account, the `hazard ratio`. The central concept is the hazard function.
+
+The idea behind the hazard function is to divide the time in consecutive intervals
+
+$$
+[0, t^{(1)}], [t^{(2)}, t^{(3)}], [t^{(q-1)}, t^{(q)}] 
+$$
+The relative risk in the q-th interval is then defined as the quotient of the conditional probability that a patient is still alive at the beginning of the interval, for therapy A and B. 
+
+From this idea follows the hazard function:
+
+$$
+\lambda(t)=\lim_{h \to 0}\frac{P(t<T<t+h|T>t)}{h}
+$$
+
+::: callout-note
+Therefore, the hazard function can be defined as the instantaneous probability of having an event at time t, given that one has survived up to time t. 
+:::
+
+# References {.unnumbered}
+
+::: {#refs}
+:::
