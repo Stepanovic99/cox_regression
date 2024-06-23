@@ -85,6 +85,7 @@ The cumulative hazard function $\Lambda(t)$ describes the accumulated risk up un
 ## Relation of survival, hazard and cumulative hazard function
 The functions are usually unknown and each function can be derived from the other. These three functions are different ways of describing the same distribution.
 
+
 $$
 \lambda(t)=-logS(t)
 $$
