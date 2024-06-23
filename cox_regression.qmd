@@ -53,8 +53,14 @@ library(survival)
 
 ## Survival Function
 
+The survival function $S(t)$ is given by
+$$
+S(t)=Prob(T>t)=1-F(t)
+$$
+$F(t)$ is the cumulative distribution function (cdf).
+$S(t)$ is the probability that the subject will survive at leat until time t.
 
-## Hazard Function
+## Hazard and Cumulative Hazard Function
 
 Relative risks or are not applicable for survival times, because we usually cannot assume that the risk is constant over time. We need to create a different measure of risk which takes the time into account, the `hazard ratio`. The central concept is the hazard function.
 
@@ -74,6 +80,17 @@ $$
 Therefore, the hazard function can be defined as the instantaneous probability of having an event at time t, given that one has survived up to time t. 
 :::
 
+The cumulative hazard function $\Lambda(t)$ describes the accumulated risk up until time t.   
+
+## Relation of survival, hazard and cumulative hazard function
+The functions are usually unknown and each function can be derived from the other. These three functions are different ways of describing the same distribution.
+
+$$
+\lambda(t)=-logS(t)
+$$
+$$
+S(t)=exp[-\lambda(t)]
+$$
 The hazard ratio is the quotient of the hazard function under therapy A and the hazard function of therapy B.
 $$
 HR=\frac{\lambda_a(t)}{\lambda_B(t)}
